@@ -1,0 +1,26 @@
+# Entornos virtuales
+venv/
+.venv/
+env/
+ENV/
+
+# Python cache y compilados
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Variables de entorno y configuración local
+.env
+.env.local
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
