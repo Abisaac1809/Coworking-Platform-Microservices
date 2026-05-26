@@ -1,0 +1,15 @@
+# Version control
+.git
+.gitignore
+
+# Rust artifacts and build directories
+target/
+**/*.rs.bk
+
+# Environment and sensitive files
+.env
+.env.*
+
+# Docker files
+Dockerfile
+.dockerignore

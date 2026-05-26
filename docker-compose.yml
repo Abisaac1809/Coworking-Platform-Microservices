@@ -1,0 +1,164 @@
+version: '3.8'
+
+services:
+  # AUTH SERVICE (FastAPI / Python)
+  auth-db:
+    image: postgres:15-alpine
+    container_name: auth-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${AUTH_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${AUTH_DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${AUTH_DB_NAME:-auth_db}
+    ports:
+      - "${AUTH_DB_PORT:-5433}:5432"
+    volumes:
+      - auth_postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 128M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    build:
+      context: ./services/AuthService
+      dockerfile: Dockerfile
+    container_name: auth-service
+    restart: always
+    ports:
+      - "${AUTH_PORT:-8000}:8000"
+    environment:
+      DATABASE_URL: postgresql://${AUTH_DB_USER:-postgres}:${AUTH_DB_PASSWORD:-postgres}@auth-db:5432/${AUTH_DB_NAME:-auth_db}
+      SECRET_KEY: ${SECRET_KEY:-clave-ultra-secreta}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+    depends_on:
+      auth-db:
+        condition: service_healthy
+
+  # SPACE SERVICE (Go)
+  space-db:
+    image: postgres:15-alpine
+    container_name: space-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${SPACE_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${SPACE_DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${SPACE_DB_NAME:-space_db}
+    ports:
+      - "${SPACE_DB_PORT:-5434}:5432"
+    volumes:
+      - space_postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 128M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  space-service:
+    build:
+      context: ./services/SpaceService
+      dockerfile: Dockerfile
+    container_name: space-service
+    restart: always
+    ports:
+      - "${SPACE_PORT:-8001}:8000"
+    environment:
+      DATABASE_URL: postgresql://${SPACE_DB_USER:-postgres}:${SPACE_DB_PASSWORD:-postgres}@space-db:5432/${SPACE_DB_NAME:-space_db}
+    depends_on:
+      space-db:
+        condition: service_healthy
+
+
+  # RESERVATION SERVICE (Rust)
+  reservation-db:
+    image: postgres:15-alpine
+    container_name: reservation-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${RESERVATION_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${RESERVATION_DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${RESERVATION_DB_NAME:-reservation_db}
+    ports:
+      - "${RESERVATION_DB_PORT:-5435}:5432"
+    volumes:
+      - reservation_postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 128M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  reservation-service:
+    build:
+      context: ./services/ReservationService
+      dockerfile: Dockerfile
+    container_name: reservation-service
+    restart: always
+    ports:
+      - "${RESERVATION_PORT:-8002}:8000"
+    environment:
+      DATABASE_URL: postgresql://${RESERVATION_DB_USER:-postgres}:${RESERVATION_DB_PASSWORD:-postgres}@reservation-db:5432/${RESERVATION_DB_NAME:-reservation_db}
+    depends_on:
+      reservation-db:
+        condition: service_healthy
+
+  # BILLING SERVICE (Node.js / Express)
+  billing-db:
+    image: postgres:15-alpine
+    container_name: billing-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${BILLING_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${BILLING_DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${BILLING_DB_NAME:-billing_db}
+    ports:
+      - "${BILLING_DB_PORT:-5436}:5432"
+    volumes:
+      - billing_postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 128M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  billing-service:
+    build:
+      context: ./services/Billing_Service
+      dockerfile: Dockerfile
+    container_name: billing-service
+    restart: always
+    ports:
+      - "${BILLING_PORT:-8003}:8000"
+    environment:
+      DATABASE_URL: postgresql://${BILLING_DB_USER:-postgres}:${BILLING_DB_PASSWORD:-postgres}@billing-db:5432/${BILLING_DB_NAME:-billing_db}
+    depends_on:
+      billing-db:
+        condition: service_healthy
+
+volumes:
+  auth_postgres_data:
+  space_postgres_data:
+  reservation_postgres_data:
+  billing_postgres_data:

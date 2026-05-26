@@ -1,0 +1,28 @@
+# Version control
+.git
+.gitignore
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Build and coverage directories
+dist/
+build/
+coverage/
+.nyc_output/
+
+# Environment and sensitive files
+.env
+.env.*
+
+# Docker files
+Dockerfile
+.dockerignore
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+*.log

@@ -1,0 +1,18 @@
+# Version control
+.git
+.gitignore
+
+# Go artifacts and directories
+vendor/
+bin/
+tmp/
+*.test
+*.out
+
+# Environment and sensitive files
+.env
+.env.*
+
+# Docker files
+Dockerfile
+.dockerignore
