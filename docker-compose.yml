@@ -1,6 +1,21 @@
-version: '3.8'
-
 services:
+  # GATEWAY (Nginx)
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: gateway
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - auth-service
+      - space-service
+      - reservation-service
+      - billing-service
+    networks:
+      - coworking-net
+
   # AUTH SERVICE (FastAPI / Python)
   auth-db:
     image: postgres:15-alpine
@@ -24,6 +39,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - coworking-net
 
   auth-service:
     build:
@@ -41,6 +58,8 @@ services:
     depends_on:
       auth-db:
         condition: service_healthy
+    networks:
+      - coworking-net
 
   # SPACE SERVICE (Go)
   space-db:
@@ -65,6 +84,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - coworking-net
 
   space-service:
     build:
@@ -79,7 +100,8 @@ services:
     depends_on:
       space-db:
         condition: service_healthy
-
+    networks:
+      - coworking-net
 
   # RESERVATION SERVICE (Rust)
   reservation-db:
@@ -104,6 +126,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - coworking-net
 
   reservation-service:
     build:
@@ -118,6 +142,8 @@ services:
     depends_on:
       reservation-db:
         condition: service_healthy
+    networks:
+      - coworking-net
 
   # BILLING SERVICE (Node.js / Express)
   billing-db:
@@ -142,6 +168,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - coworking-net
 
   billing-service:
     build:
@@ -156,9 +184,15 @@ services:
     depends_on:
       billing-db:
         condition: service_healthy
+    networks:
+      - coworking-net
 
 volumes:
   auth_postgres_data:
   space_postgres_data:
   reservation_postgres_data:
   billing_postgres_data:
+
+networks:
+  coworking-net:
+    driver: bridge
