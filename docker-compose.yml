@@ -97,8 +97,11 @@ services:
       - "${SPACE_PORT:-8001}:8000"
     environment:
       DATABASE_URL: postgresql://${SPACE_DB_USER:-postgres}:${SPACE_DB_PASSWORD:-postgres}@space-db:5432/${SPACE_DB_NAME:-space_db}
+      AMQP_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672/${RABBITMQ_VHOST:-}
     depends_on:
       space-db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - coworking-net
@@ -139,8 +142,11 @@ services:
       - "${RESERVATION_PORT:-8002}:8000"
     environment:
       DATABASE_URL: postgresql://${RESERVATION_DB_USER:-postgres}:${RESERVATION_DB_PASSWORD:-postgres}@reservation-db:5432/${RESERVATION_DB_NAME:-reservation_db}
+      AMQP_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672/${RABBITMQ_VHOST:-}
     depends_on:
       reservation-db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - coworking-net
@@ -187,11 +193,39 @@ services:
     networks:
       - coworking-net
 
+  # MESSAGE BROKER (RabbitMQ)
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-/}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    networks:
+      - coworking-net
+
 volumes:
   auth_postgres_data:
   space_postgres_data:
   reservation_postgres_data:
   billing_postgres_data:
+  rabbitmq_data:
 
 networks:
   coworking-net:
