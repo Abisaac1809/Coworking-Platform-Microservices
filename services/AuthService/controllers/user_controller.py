@@ -17,6 +17,9 @@ class UserController:
     def delete_me(self, user_id: int) -> None:
         self.__user_service.delete_user(user_id)
 
+    def get_admins(self) -> list[UserResponse]:
+        return self.__user_service.get_admins()
+
     def create_admin(self, user_data: UserToCreateSchema) -> UserResponse:
         return self.__user_service.create_admin(user_data)
 

@@ -53,6 +53,9 @@ class UserService:
         self.__get_user_or_raise(user_id)
         self.__user_repository.delete_user(user_id)
 
+    def get_admins(self) -> list[UserResponse]:
+        return [self.__to_public(u) for u in self.__user_repository.get_admins()]
+
     def create_admin(self, user_data: UserToCreateSchema) -> UserResponse:
         self.__ensure_email_is_available(user_data.email)
         self.__ensure_phone_is_available(user_data.phone)

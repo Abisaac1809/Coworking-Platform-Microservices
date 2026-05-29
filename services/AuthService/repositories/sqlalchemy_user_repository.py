@@ -25,6 +25,9 @@ class SqlAlchemyUserRepository:
     def get_list_of_users(self) -> list[UserInDb]:
         return [self._to_dto(r) for r in self._db.query(User).all()]
 
+    def get_admins(self) -> list[UserInDb]:
+        return [self._to_dto(r) for r in self._db.query(User).filter(User.role == "Admin").all()]
+
     def create_user(self, user_data: UserToCreateSchema) -> UserInDb:
         orm_user = User(**user_data.model_dump())
         self._db.add(orm_user)

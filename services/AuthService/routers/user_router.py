@@ -41,6 +41,14 @@ def delete_user(
     controller.delete_me(user_id)
 
 
+@router.get("/admins", response_model=list[UserResponse])
+def get_admins(
+    admin_id: int = Depends(require_admin),
+    controller: UserController = Depends(get_controller),
+):
+    return controller.get_admins()
+
+
 @router.post("/admin", response_model=UserResponse, status_code=201)
 def create_admin(
     user_data: UserToCreateSchema,
