@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	"SpaceService/handlers"
+	"SpaceService/messaging"
 	"SpaceService/middlewares"
 	"SpaceService/models"
 )
@@ -41,6 +42,19 @@ func main() {
 		}
 	}
 
+	// RabbitMQ Producer
+	amqpURL := os.Getenv("AMQP_URL")
+	if amqpURL == "" {
+		log.Fatal("AMQP_URL environment variable is required")
+	}
+
+	producer, err := messaging.NewRabbitMQProducer(amqpURL)
+	if err != nil {
+		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
+	}
+	defer producer.Close()
+	log.Println("RabbitMQ producer connected")
+
 	r := gin.Default()
 
 	// Servir archivos estáticos
@@ -60,7 +74,7 @@ func main() {
 	})
 
 	// Setup de Handlers y Rutas
-	espacioHandler := handlers.NewEspacioHandler(db)
+	espacioHandler := handlers.NewEspacioHandler(db, producer)
 
 	espaciosGroup := r.Group("/espacios")
 	espaciosGroup.Use(middlewares.RequireUserId())
