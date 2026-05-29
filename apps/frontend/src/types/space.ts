@@ -8,6 +8,7 @@ export interface Espacio {
   precio_por_hora: number
   estado: EspacioEstado | string
   foto_url: string
+  necesita_verificacion?: boolean
   creado_en?: string
 }
 

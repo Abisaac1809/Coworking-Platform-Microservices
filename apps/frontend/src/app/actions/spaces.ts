@@ -13,6 +13,7 @@ function buildSpaceForm(formData: FormData, requireFoto: boolean): FormData | st
   const capacidad = formData.get('capacidad') as string;
   const precioPorHora = formData.get('precioPorHora') as string;
   const foto = formData.get('foto') as File | null;
+  const necesitaVerificacion = formData.get('necesitaVerificacion') === 'true';
 
   if (!nombre?.trim()) return 'El nombre es obligatorio.';
   if (!capacidad) return 'La capacidad es obligatoria.';
@@ -24,6 +25,7 @@ function buildSpaceForm(formData: FormData, requireFoto: boolean): FormData | st
   fd.append('descripcion', descripcion);
   fd.append('capacidad', capacidad);
   fd.append('precioPorHora', precioPorHora);
+  fd.append('necesitaVerificacion', necesitaVerificacion ? 'true' : 'false');
   if (foto && foto.size > 0) fd.append('foto', foto);
   return fd;
 }

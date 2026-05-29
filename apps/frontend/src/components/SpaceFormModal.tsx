@@ -132,6 +132,20 @@ export default function SpaceFormModal({ mode, espacio }: SpaceFormModalProps) {
             )}
           </div>
 
+          <div className="flex items-center gap-3">
+            <input
+              name="necesitaVerificacion"
+              id="necesitaVerificacion"
+              type="checkbox"
+              value="true"
+              defaultChecked={espacio?.necesita_verificacion ?? false}
+              className="w-4 h-4 rounded border-[#e2e8f0] text-[#0d9488] focus:ring-[#0d9488]"
+            />
+            <label htmlFor="necesitaVerificacion" className={labelCls + ' mb-0'}>
+              Requiere verificación antes de reservar
+            </label>
+          </div>
+
           {state.error && (
             <p className="text-[13px] text-[#dc2626] bg-[#fee2e2] border border-[#fecaca] rounded-[8px] px-4 py-3">
               {state.error}
