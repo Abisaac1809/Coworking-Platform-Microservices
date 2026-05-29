@@ -10,15 +10,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"SpaceService/messaging"
 	"SpaceService/models"
 )
 
 type EspacioHandler struct {
-	DB *gorm.DB
+	DB       *gorm.DB
+	Producer *messaging.RabbitMQProducer
 }
 
-func NewEspacioHandler(db *gorm.DB) *EspacioHandler {
-	return &EspacioHandler{DB: db}
+func NewEspacioHandler(db *gorm.DB, producer *messaging.RabbitMQProducer) *EspacioHandler {
+	return &EspacioHandler{DB: db, Producer: producer}
 }
 
 // ListarEspacios - GET /espacios
@@ -130,17 +132,24 @@ func (h *EspacioHandler) CrearEspacio(c *gin.Context) {
 
 	fotoURL := "/api/spaces/uploads/" + uniqueName
 
+	necesitaVerificacion := c.PostForm("necesitaVerificacion") == "true"
+
 	espacio := models.Espacio{
-		Nombre:        nombre,
-		Descripcion:   descripcion,
-		Capacidad:     capacidad,
-		PrecioPorHora: precioPorHora,
-		FotoURL:       fotoURL,
+		Nombre:               nombre,
+		Descripcion:          descripcion,
+		Capacidad:            capacidad,
+		PrecioPorHora:        precioPorHora,
+		NecesitaVerificacion: necesitaVerificacion,
+		FotoURL:              fotoURL,
 	}
 
 	if err := h.DB.Create(&espacio).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al crear el espacio en base de datos"})
 		return
+	}
+
+	if h.Producer != nil {
+		h.Producer.Publish("espacio.creado", espacio.ID, espacio.NecesitaVerificacion)
 	}
 
 	c.JSON(http.StatusCreated, espacio)
@@ -171,6 +180,9 @@ func (h *EspacioHandler) ActualizarEspacio(c *gin.Context) {
 			espacio.PrecioPorHora = precio
 		}
 	}
+	if nv := c.PostForm("necesitaVerificacion"); nv != "" {
+		espacio.NecesitaVerificacion = nv == "true"
+	}
 
 	file, err := c.FormFile("foto")
 	if err == nil {
@@ -185,6 +197,10 @@ func (h *EspacioHandler) ActualizarEspacio(c *gin.Context) {
 	if err := h.DB.Save(&espacio).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar el espacio"})
 		return
+	}
+
+	if h.Producer != nil {
+		h.Producer.Publish("espacio.actualizado", espacio.ID, espacio.NecesitaVerificacion)
 	}
 
 	c.JSON(http.StatusOK, espacio)
