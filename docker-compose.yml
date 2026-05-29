@@ -7,7 +7,7 @@ services:
     container_name: gateway
     restart: always
     ports:
-      - "3000:80"
+      - "8080:80"
     depends_on:
       - auth-service
       - space-service
@@ -181,6 +181,8 @@ services:
       - "${BILLING_PORT:-8003}:8000"
     environment:
       DATABASE_URL: postgresql://${BILLING_DB_USER:-postgres}:${BILLING_DB_PASSWORD:-postgres}@billing-db:5432/${BILLING_DB_NAME:-billing_db}
+      SECRET_KEY: ${SECRET_KEY:-clave-ultra-secreta}
+      ALGORITHM: ${ALGORITHM:-HS256}
     depends_on:
       billing-db:
         condition: service_healthy
