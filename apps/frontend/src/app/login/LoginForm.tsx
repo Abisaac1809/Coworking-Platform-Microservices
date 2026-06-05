@@ -57,10 +57,10 @@ export default function LoginForm() {
 
         {/* Heading */}
         <h1 className="text-[24px] font-bold text-[#1e293b] tracking-[-0.02em] mb-1">
-          Welcome back
+          Bienvenido de vuelta
         </h1>
         <p className="text-[14px] text-[#64748b] mb-8">
-          Sign in to your account
+          Inicia sesión en tu cuenta
         </p>
 
         <form action={formAction} onSubmit={handleSubmit} noValidate>
@@ -91,7 +91,7 @@ export default function LoginForm() {
               htmlFor="password"
               className="block text-[13px] font-medium text-[#1e293b] mb-1.5"
             >
-              Password
+              Contraseña
             </label>
             <input
               id="password"
@@ -121,17 +121,17 @@ export default function LoginForm() {
             disabled={pending}
             className="w-full bg-[#0d9488] hover:bg-[#0f766e] text-white font-medium text-sm py-[10px] rounded-[8px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {pending ? 'Signing in…' : 'Sign in'}
+            {pending ? 'Iniciando sesión…' : 'Iniciar sesión'}
           </button>
         </form>
 
         <p className="text-center text-[14px] text-[#64748b] mt-6">
-          Don&apos;t have an account?{' '}
+          ¿No tienes una cuenta?{' '}
           <Link
             href="/register"
             className="font-semibold text-[#0d9488] hover:text-[#0f766e] transition-colors"
           >
-            Sign up
+            Regístrate
           </Link>
         </p>
       </div>

@@ -1,23 +1,23 @@
 import { z } from 'zod';
 
 export const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'At least 6 characters').max(30, 'Max 30 characters'),
+  email: z.string().email('Correo electrónico inválido'),
+  password: z.string().min(6, 'Mínimo 6 caracteres').max(30, 'Máximo 30 caracteres'),
 });
 
 export const registerSchema = z
   .object({
-    name: z.string().min(3, 'At least 3 characters').max(100, 'Max 100 characters'),
-    email: z.string().email('Invalid email address'),
-    countryCode: z.string().regex(/^\+[0-9]{2}$/, 'Invalid country code'),
+    name: z.string().min(3, 'Mínimo 3 caracteres').max(100, 'Máximo 100 caracteres'),
+    email: z.string().email('Correo electrónico inválido'),
+    countryCode: z.string().regex(/^\+[0-9]{2}$/, 'Código de país inválido'),
     phoneNumber: z
       .string()
-      .regex(/^[0-9]{3}-[0-9]{7}$/, 'Format: 300-1234567'),
-    password: z.string().min(6, 'At least 6 characters').max(30, 'Max 30 characters'),
+      .regex(/^[0-9]{3}-[0-9]{7}$/, 'Formato: 300-1234567'),
+    password: z.string().min(6, 'Mínimo 6 caracteres').max(30, 'Máximo 30 caracteres'),
     confirmPassword: z.string(),
   })
   .refine((d) => d.password === d.confirmPassword, {
-    message: "Passwords don't match",
+    message: 'Las contraseñas no coinciden',
     path: ['confirmPassword'],
   });
 

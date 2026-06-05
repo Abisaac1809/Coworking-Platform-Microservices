@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import LoginForm from './LoginForm';
 
 export const metadata: Metadata = {
-  title: 'Sign in — NEXUS Cowork',
+  title: 'Iniciar sesión — NEXUS Cowork',
 };
 
 export default function LoginPage() {

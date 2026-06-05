@@ -1,10 +1,11 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { changeSpaceStatusAction, type SpaceActionState } from '@/app/actions/spaces';
 import { spaceImageUrl } from '@/lib/spaces';
 import Badge from '@/components/Badge';
 import SpaceFormModal from '@/components/SpaceFormModal';
+import NuevaReservaModal from '@/app/(app)/reservations/NuevaReservaModal';
 import type { Espacio } from '@/types';
 
 const ESTADOS = ['disponible', 'reservada', 'ocupada', 'mantenimiento'];
@@ -17,6 +18,7 @@ interface SpaceCardProps {
 
 export default function SpaceCard({ espacio, isAdmin }: SpaceCardProps) {
   const [state, action, pending] = useActionState(changeSpaceStatusAction, init);
+  const [reservaOpen, setReservaOpen] = useState(false);
   const img = spaceImageUrl(espacio.foto_url);
 
   return (
@@ -57,7 +59,7 @@ export default function SpaceCard({ espacio, isAdmin }: SpaceCardProps) {
           Capacidad: {espacio.capacidad} personas
         </div>
 
-        {isAdmin && (
+        {isAdmin ? (
           <div className="space-y-2 border-t border-[#e2e8f0] pt-3">
             <div className="flex items-center gap-2">
               <SpaceFormModal mode="edit" espacio={espacio} />
@@ -77,6 +79,21 @@ export default function SpaceCard({ espacio, isAdmin }: SpaceCardProps) {
               </form>
             </div>
             {state.error && <p className="text-[12px] text-[#dc2626]">{state.error}</p>}
+          </div>
+        ) : (
+          <div className="border-t border-[#e2e8f0] pt-3">
+            <button
+              onClick={() => setReservaOpen(true)}
+              className="w-full bg-[#0d9488] hover:bg-[#0f766e] text-white text-sm font-medium py-[10px] rounded-[8px] transition-colors"
+            >
+              Reservar
+            </button>
+            <NuevaReservaModal
+              preselectedSpace={espacio}
+              openExternally
+              isOpenExternal={reservaOpen}
+              onClose={() => setReservaOpen(false)}
+            />
           </div>
         )}
       </div>

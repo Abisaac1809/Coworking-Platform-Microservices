@@ -9,7 +9,7 @@ import type { Espacio } from '@/types';
 
 export const metadata: Metadata = { title: 'Inventario de Espacios — NEXUS Cowork' };
 
-const ESTADOS = ['disponible', 'reservada', 'ocupada', 'mantenimiento'];
+const ADMIN_ESTADOS = ['disponible', 'reservada', 'ocupada', 'mantenimiento'];
 const inputCls =
   'px-[14px] py-[10px] border border-[#e2e8f0] rounded-[8px] text-sm text-[#1e293b] placeholder-[#94a3b8] bg-white focus:outline-none focus:border-[#0d9488] transition-colors';
 
@@ -24,7 +24,8 @@ export default async function SpacesPage({ searchParams }: SpacesPageProps) {
 
   const params = new URLSearchParams({ page: '1', limit: '50' });
   if (search) params.set('search', search);
-  if (status) params.set('status', status);
+  if (isAdmin && status) params.set('status', status);
+  if (!isAdmin) params.set('status', 'disponible');
   if (capacidad) params.set('capacidad', capacidad);
 
   let espacios: Espacio[] = [];
@@ -40,7 +41,7 @@ export default async function SpacesPage({ searchParams }: SpacesPageProps) {
 
   return (
     <div>
-      <PageHeader title="Inventario de Espacios">
+      <PageHeader title={isAdmin ? 'Inventario de Espacios' : 'Espacios Disponibles'}>
         {isAdmin && <SpaceFormModal mode="create" />}
       </PageHeader>
 
@@ -59,15 +60,17 @@ export default async function SpacesPage({ searchParams }: SpacesPageProps) {
             className={`${inputCls} w-full`}
           />
         </div>
-        <div>
-          <label className="block text-[13px] font-medium text-[#1e293b] mb-1.5">Estado</label>
-          <select name="status" defaultValue={status} className={`${inputCls} w-[170px]`}>
-            <option value="">Todos</option>
-            {ESTADOS.map((e) => (
-              <option key={e} value={e}>{e}</option>
-            ))}
-          </select>
-        </div>
+        {isAdmin && (
+          <div>
+            <label className="block text-[13px] font-medium text-[#1e293b] mb-1.5">Estado</label>
+            <select name="status" defaultValue={status} className={`${inputCls} w-[170px]`}>
+              <option value="">Todos</option>
+              {ADMIN_ESTADOS.map((e) => (
+                <option key={e} value={e}>{e}</option>
+              ))}
+            </select>
+          </div>
+        )}
         <div>
           <label className="block text-[13px] font-medium text-[#1e293b] mb-1.5">Capacidad mín.</label>
           <input
@@ -90,11 +93,11 @@ export default async function SpacesPage({ searchParams }: SpacesPageProps) {
       {espacios.length === 0 ? (
         <div className="bg-white rounded-[12px] border border-[#e2e8f0] shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-6">
           <EmptyState
-            title="No hay espacios"
+            title={isAdmin ? 'No hay espacios' : 'No hay espacios disponibles'}
             description={
               isAdmin
                 ? 'Crea tu primer espacio con el botón “Nuevo Espacio”.'
-                : 'Aún no hay espacios disponibles en el catálogo.'
+                : 'Por el momento no hay espacios disponibles para reservar.'
             }
           />
         </div>

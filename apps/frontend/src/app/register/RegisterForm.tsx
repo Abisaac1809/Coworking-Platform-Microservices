@@ -75,10 +75,10 @@ export default function RegisterForm() {
 
         {/* Heading */}
         <h1 className="text-[24px] font-bold text-[#1e293b] tracking-[-0.02em] mb-1">
-          Create an account
+          Crear una cuenta
         </h1>
         <p className="text-[14px] text-[#64748b] mb-8">
-          Join NEXUS Cowork today
+          Únete a NEXUS Cowork hoy
         </p>
 
         <form action={formAction} onSubmit={handleSubmit} noValidate>
@@ -88,7 +88,7 @@ export default function RegisterForm() {
               htmlFor="name"
               className="block text-[13px] font-medium text-[#1e293b] mb-1.5"
             >
-              Full name
+              Nombre completo
             </label>
             <input
               id="name"
@@ -127,7 +127,7 @@ export default function RegisterForm() {
           {/* Phone */}
           <div className="mb-4">
             <label className="block text-[13px] font-medium text-[#1e293b] mb-1.5">
-              Phone
+              Teléfono
             </label>
             <div className="flex gap-2">
               <select
@@ -165,7 +165,7 @@ export default function RegisterForm() {
               htmlFor="password"
               className="block text-[13px] font-medium text-[#1e293b] mb-1.5"
             >
-              Password
+              Contraseña
             </label>
             <input
               id="password"
@@ -186,7 +186,7 @@ export default function RegisterForm() {
               htmlFor="confirmPassword"
               className="block text-[13px] font-medium text-[#1e293b] mb-1.5"
             >
-              Confirm password
+              Confirmar contraseña
             </label>
             <input
               id="confirmPassword"
@@ -218,17 +218,17 @@ export default function RegisterForm() {
             disabled={pending}
             className="w-full bg-[#0d9488] hover:bg-[#0f766e] text-white font-medium text-sm py-[10px] rounded-[8px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {pending ? 'Creating account…' : 'Create account'}
+            {pending ? 'Creando cuenta…' : 'Crear cuenta'}
           </button>
         </form>
 
         <p className="text-center text-[14px] text-[#64748b] mt-6">
-          Already have an account?{' '}
+          ¿Ya tienes una cuenta?{' '}
           <Link
             href="/login"
             className="font-semibold text-[#0d9488] hover:text-[#0f766e] transition-colors"
           >
-            Sign in
+            Inicia sesión
           </Link>
         </p>
       </div>
