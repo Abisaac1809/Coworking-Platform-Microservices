@@ -7,7 +7,7 @@ services:
     container_name: gateway
     restart: always
     ports:
-      - "3000:80"
+      - "8080:80"
     depends_on:
       - auth-service
       - space-service
@@ -98,6 +98,8 @@ services:
     environment:
       DATABASE_URL: postgresql://${SPACE_DB_USER:-postgres}:${SPACE_DB_PASSWORD:-postgres}@space-db:5432/${SPACE_DB_NAME:-space_db}
       AMQP_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672/${RABBITMQ_VHOST:-}
+      SECRET_KEY: ${SECRET_KEY:-clave-ultra-secreta}
+      ALGORITHM: ${ALGORITHM:-HS256}
     depends_on:
       space-db:
         condition: service_healthy
@@ -143,6 +145,8 @@ services:
     environment:
       DATABASE_URL: postgresql://${RESERVATION_DB_USER:-postgres}:${RESERVATION_DB_PASSWORD:-postgres}@reservation-db:5432/${RESERVATION_DB_NAME:-reservation_db}
       AMQP_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672/${RABBITMQ_VHOST:-}
+      SECRET_KEY: ${SECRET_KEY:-clave-ultra-secreta}
+      ALGORITHM: ${ALGORITHM:-HS256}
     depends_on:
       reservation-db:
         condition: service_healthy
@@ -187,6 +191,8 @@ services:
       - "${BILLING_PORT:-8003}:8000"
     environment:
       DATABASE_URL: postgresql://${BILLING_DB_USER:-postgres}:${BILLING_DB_PASSWORD:-postgres}@billing-db:5432/${BILLING_DB_NAME:-billing_db}
+      SECRET_KEY: ${SECRET_KEY:-clave-ultra-secreta}
+      ALGORITHM: ${ALGORITHM:-HS256}
     depends_on:
       billing-db:
         condition: service_healthy

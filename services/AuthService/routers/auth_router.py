@@ -8,7 +8,7 @@ from services.auth_service import AuthService
 from repositories import SqlAlchemyUserRepository
 
 router = APIRouter(
-    prefix="/auth",
+    prefix="",
     tags=["auth"]
 )
 

@@ -2,6 +2,7 @@ const express = require('express');
 require('dotenv').config();
 
 const { pool } = require('./db/connection');
+const { authenticate } = require('./middlewares/auth.middleware');
 const facturasRoutes = require('./routes/facturas.routes');
 const reportesRoutes = require('./routes/reportes.routes');
 
@@ -23,9 +24,11 @@ app.get('/health', async (req, res) => {
   res.status(200).json({
     status: 'healthy',
     service: 'BillingService',
-    database: dbStatus
+    database: dbStatus,
   });
 });
+
+app.use(authenticate);
 
 app.use('/facturas', facturasRoutes);
 app.use('/reportes', reportesRoutes);

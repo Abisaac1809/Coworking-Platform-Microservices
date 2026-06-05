@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+:root {
+  --primary: #0d9488;
+  --primary-hover: #0f766e;
+  --primary-dark: #115e59;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --bg: #f8fafc;
+}
+
+@theme inline {
+  --font-sans: var(--font-dm-sans);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-dm-sans), 'DM Sans', system-ui, sans-serif;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

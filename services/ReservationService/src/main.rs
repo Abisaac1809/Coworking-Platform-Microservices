@@ -14,6 +14,7 @@ mod traits;
 use sqlx::PgPool;
 
 use crate::repositories::espacio_verificacion_repository::EspacioVerificacionRepository;
+use crate::repositories::horario_negocio_repository::HorarioNegocioRepository;
 use crate::repositories::reserva_repository::ReservaRepository;
 use crate::routers::AppState;
 use crate::storage::cola_prioridad::ColaPrioridad;
@@ -35,6 +36,7 @@ async fn main() {
 
     let reserva_repo = ReservaRepository::new(pool.clone());
     let ev_repo = EspacioVerificacionRepository::new(pool.clone());
+    let horario_repo = HorarioNegocioRepository::new(pool.clone());
 
     let pendientes = reserva_repo
         .cargar_pendientes()
@@ -57,6 +59,7 @@ async fn main() {
         cola,
         reserva_repo,
         ev_repo,
+        horario_repo,
     };
 
     let app = routers::create_router(state);

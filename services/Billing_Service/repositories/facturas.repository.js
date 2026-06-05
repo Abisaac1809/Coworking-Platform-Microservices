@@ -51,7 +51,8 @@ async function obtenerFacturaPorReservaId(reservaId) {
 
 async function listarFacturasPorUsuario(usuarioId, limit, offset, order) {
   const query = `
-    SELECT id, reserva_id, total, fecha_inicio, estado
+    SELECT id, reserva_id, usuario_id, espacio_id, fecha_inicio, fecha_fin,
+           horas, precio_hora, subtotal, impuesto, total, estado
     FROM facturas
     WHERE usuario_id = $1
     ORDER BY fecha_inicio ${order.toUpperCase()}
@@ -70,7 +71,8 @@ async function contarFacturasPorUsuario(usuarioId) {
 
 async function listarTodasLasFacturas(limit, offset, order) {
   const query = `
-    SELECT id, reserva_id, usuario_id, espacio_id, total, fecha_inicio, estado
+    SELECT id, reserva_id, usuario_id, espacio_id, fecha_inicio, fecha_fin,
+           horas, precio_hora, subtotal, impuesto, total, estado
     FROM facturas
     ORDER BY fecha_inicio ${order.toUpperCase()}
     LIMIT $1 OFFSET $2

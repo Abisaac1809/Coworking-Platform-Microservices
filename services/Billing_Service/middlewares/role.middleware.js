@@ -1,17 +1,11 @@
 function requireRole(...allowedRoles) {
   return (req, res, next) => {
-    const userRole = req.headers['x-user-role'];
-
-    if (!userRole) {
-      return res.status(401).json({
-        message: 'Missing x-user-role header',
-      });
+    if (!req.user?.role) {
+      return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    if (!allowedRoles.includes(userRole)) {
-      return res.status(403).json({
-        message: 'Forbidden: insufficient role',
-      });
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ message: 'Forbidden: insufficient role' });
     }
 
     next();

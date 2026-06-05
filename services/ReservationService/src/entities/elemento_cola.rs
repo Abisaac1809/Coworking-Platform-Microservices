@@ -9,6 +9,8 @@ pub struct ElementoCola {
     pub espacio_id: i32,
     pub usuario_id: i32,
     pub fecha_inicio: NaiveDateTime,
+    pub fecha_fin: NaiveDateTime,
+    pub notas: Option<String>,
 }
 
 impl Ord for ElementoCola {

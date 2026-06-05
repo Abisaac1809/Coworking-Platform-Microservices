@@ -56,11 +56,7 @@ class UserResponse(BaseModel):
 
     email: EmailStr
 
-    phone: str = Field(
-        title='Phone Number',
-        pattern=r'^\+[0-9]{2} [0-9]{3}-[0-9]{7}$',
-        examples=['+57 300-1234567']
-    )
+    phone: str = Field(title='Phone Number')
 
     role: str = Field(title='User Role')
 
