@@ -1,17 +1,19 @@
-use chrono::Utc;
+use chrono::{Datelike, Utc};
 
 use crate::entities::elemento_cola::ElementoCola;
 use crate::entities::reserva::Reserva;
 use crate::errors::AppError;
 use crate::repositories::espacio_verificacion_repository::EspacioVerificacionRepository;
+use crate::repositories::horario_negocio_repository::HorarioNegocioRepository;
 use crate::repositories::reserva_repository::ReservaRepository;
 use crate::schemas::reserva_schemas::{ConfirmarResponse, CrearReservaRequest};
 use crate::storage::cola_prioridad::ColaPrioridad;
-use crate::traits::{EspacioVerificacionRepositoryTrait, ReservaRepositoryTrait};
+use crate::traits::{EspacioVerificacionRepositoryTrait, HorarioNegocioRepositoryTrait, ReservaRepositoryTrait};
 
 pub async fn crear_reserva(
     repo: &ReservaRepository,
     ev_repo: &EspacioVerificacionRepository,
+    horario_repo: &HorarioNegocioRepository,
     cola: &ColaPrioridad,
     usuario_id: i32,
     req: CrearReservaRequest,
@@ -25,6 +27,39 @@ pub async fn crear_reserva(
     if req.fecha_fin <= req.fecha_inicio {
         return Err(AppError::BadRequest(
             "La fecha de fin debe ser posterior a la fecha de inicio".into(),
+        ));
+    }
+
+    if req.fecha_inicio.date() != req.fecha_fin.date() {
+        return Err(AppError::BadRequest(
+            "La reserva debe iniciar y terminar el mismo día".into(),
+        ));
+    }
+
+    let dia_semana: i16 = match req.fecha_inicio.weekday() {
+        chrono::Weekday::Sun => 0,
+        chrono::Weekday::Mon => 1,
+        chrono::Weekday::Tue => 2,
+        chrono::Weekday::Wed => 3,
+        chrono::Weekday::Thu => 4,
+        chrono::Weekday::Fri => 5,
+        chrono::Weekday::Sat => 6,
+    };
+
+    let horario = horario_repo
+        .obtener_por_dia(dia_semana)
+        .await?
+        .ok_or_else(|| AppError::BadRequest("El negocio no opera ese día".into()))?;
+
+    if !horario.activo {
+        return Err(AppError::BadRequest(
+            "El negocio no opera ese día".into(),
+        ));
+    }
+
+    if req.fecha_inicio.time() < horario.hora_inicio || req.fecha_fin.time() > horario.hora_fin {
+        return Err(AppError::BadRequest(
+            "La reserva está fuera del horario de atención".into(),
         ));
     }
 
@@ -52,6 +87,8 @@ pub async fn crear_reserva(
             espacio_id: reserva.espacio_id,
             usuario_id: reserva.usuario_id,
             fecha_inicio: reserva.fecha_inicio,
+            fecha_fin: reserva.fecha_fin,
+            notas: reserva.notas.clone(),
         })
         .await;
     }
@@ -70,7 +107,7 @@ pub async fn cancelar_reserva(
         .await?
         .ok_or_else(|| AppError::NotFound("Reserva no encontrada".into()))?;
 
-    if user_role != "admin" && reserva.usuario_id != user_id {
+    if user_role != "Admin" && reserva.usuario_id != user_id {
         return Err(AppError::Forbidden(
             "No tiene permiso para cancelar esta reserva".into(),
         ));

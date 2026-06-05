@@ -1,7 +1,8 @@
 use crate::entities::espacio_verificacion::EspacioVerificacion;
+use crate::entities::horario_negocio::HorarioNegocio;
 use crate::entities::reserva::Reserva;
 use crate::errors::AppError;
-use chrono::NaiveDateTime;
+use chrono::{NaiveDateTime, NaiveTime};
 
 pub trait ReservaRepositoryTrait: Send + Sync {
     fn crear(
@@ -43,6 +44,25 @@ pub trait ReservaRepositoryTrait: Send + Sync {
     fn cargar_pendientes(
         &self,
     ) -> impl std::future::Future<Output = Result<Vec<Reserva>, AppError>> + Send;
+}
+
+pub trait HorarioNegocioRepositoryTrait: Send + Sync {
+    fn listar_todos(
+        &self,
+    ) -> impl std::future::Future<Output = Result<Vec<HorarioNegocio>, AppError>> + Send;
+
+    fn obtener_por_dia(
+        &self,
+        dia_semana: i16,
+    ) -> impl std::future::Future<Output = Result<Option<HorarioNegocio>, AppError>> + Send;
+
+    fn actualizar(
+        &self,
+        dia_semana: i16,
+        hora_inicio: NaiveTime,
+        hora_fin: NaiveTime,
+        activo: bool,
+    ) -> impl std::future::Future<Output = Result<HorarioNegocio, AppError>> + Send;
 }
 
 pub trait EspacioVerificacionRepositoryTrait: Send + Sync {

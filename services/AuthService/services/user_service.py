@@ -53,6 +53,9 @@ class UserService:
         self.__get_user_or_raise(user_id)
         self.__user_repository.delete_user(user_id)
 
+    def get_users(self) -> list[UserResponse]:
+        return [self.__to_public(u) for u in self.__user_repository.get_list_of_users()]
+
     def get_admins(self) -> list[UserResponse]:
         return [self.__to_public(u) for u in self.__user_repository.get_admins()]
 

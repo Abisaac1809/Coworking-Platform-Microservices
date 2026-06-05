@@ -16,6 +16,14 @@ def get_controller(db: Session = Depends(get_db)) -> UserController:
     return UserController(UserService(SqlAlchemyUserRepository(db)))
 
 
+@router.get("", response_model=list[UserResponse])
+def get_users(
+    admin_id: int = Depends(require_admin),
+    controller: UserController = Depends(get_controller),
+):
+    return controller.get_users()
+
+
 @router.get("/me", response_model=UserResponse)
 def get_user(
     user_id: int = Depends(get_current_user_id),

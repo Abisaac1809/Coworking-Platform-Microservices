@@ -18,6 +18,7 @@ pub async fn crear_reserva(
     let reserva = reserva_service::crear_reserva(
         &state.reserva_repo,
         &state.ev_repo,
+        &state.horario_repo,
         &state.cola,
         auth.user_id,
         body,

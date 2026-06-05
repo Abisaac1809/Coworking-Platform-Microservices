@@ -25,6 +25,8 @@ impl ColaPrioridad {
                 espacio_id: r.espacio_id,
                 usuario_id: r.usuario_id,
                 fecha_inicio: r.fecha_inicio,
+                fecha_fin: r.fecha_fin,
+                notas: r.notas.clone(),
             });
         }
         Self {
