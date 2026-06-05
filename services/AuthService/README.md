@@ -1,133 +1,93 @@
-# Microservicio de Autenticación
+# AuthService
 
-Este microservicio se encarga de gestionar el registro, el inicio de sesión y la administración de los usuarios en la plataforma de Coworking. Implementa autenticación basada en tokens JWT (JSON Web Tokens) transmitidos mediante cabeceras HTTP Bearer.
+Microservicio de **autenticación y gestión de usuarios** de la Nexus Coworking
+Platform. Se encarga del registro, inicio de sesión, gestión de perfiles y
+administración de cuentas/roles. Emite y valida tokens **JWT (HS256)** que el resto
+de microservicios usa para autenticar y autorizar peticiones de forma autónoma.
 
----
-
-## Tecnologías Utilizadas
-
-*   **Lenguaje**: Python 3.11+
-*   **Framework**: FastAPI
-*   **ORM**: SQLAlchemy
-*   **Seguridad**: JWT (PyJWT) y Hash de Contraseñas (pwdlib)
-*   **Base de Datos**: PostgreSQL (a través del conector psycopg2)
-
----
-
-## Endpoints de la API
-
-Todos los endpoints que requieren autenticación esperan el token en la cabecera `Authorization: Bearer <token>`.
-
-### 1. Endpoints Públicos
-
-#### `POST /auth/register` (Registrar Usuario)
-*   **Body (JSON)**:
-    ```json
-    {
-      "name": "Jane Doe",
-      "email": "jane@example.com",
-      "phone": "+57 300-1234567",
-      "password": "mi_contrasena_segura"
-    }
-    ```
-*   **Respuesta (201 Created)**:
-    ```json
-    {
-      "message": "Register Successful",
-      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-      "token_type": "bearer",
-      "user": {
-        "id": 2,
-        "name": "Jane Doe",
-        "email": "jane@example.com",
-        "phone": "+57 300-1234567",
-        "role": "User",
-        "created_at": "2026-05-23T19:00:00Z",
-        "updated_at": "2026-05-23T19:00:00Z"
-      }
-    }
-    ```
-
-#### `POST /auth/login` (Iniciar Sesión)
-*   **Body (JSON)**:
-    ```json
-    {
-      "email": "jane@example.com",
-      "password": "mi_contrasena_segura"
-    }
-    ```
-*   **Respuesta (200 OK)**: Retorna el mismo formato que el registro, incluyendo el `access_token`.
+- **Lenguaje:** Python 3.11+
+- **Framework:** FastAPI
+- **ORM:** SQLAlchemy
+- **Seguridad:** JWT (PyJWT) + hash de contraseñas (pwdlib)
+- **Base de datos:** PostgreSQL (psycopg2)
 
 ---
 
-### 2. Endpoints Protegidos (Cualquier Usuario Autenticado)
+## Arquitectura interna
 
-#### `GET /users/me` (Ver Mi Perfil)
-*   **Headers**: `Authorization: Bearer <token>`
-*   **Respuesta (200 OK)**: Datos del usuario autenticado.
+El servicio sigue una **arquitectura en capas (Clean Architecture)** con inyección
+de dependencias nativa de FastAPI (`Depends`). Cada petición fluye de afuera hacia
+adentro, y la capa de dominio depende de *protocolos* (interfaces) en vez de
+implementaciones concretas, lo que desacopla la lógica de negocio de la persistencia.
 
-#### `PUT /users/me` (Actualizar Mi Perfil)
-*   **Headers**: `Authorization: Bearer <token>`
-*   **Body (JSON)**: Igual al de registro.
-*   **Respuesta (200 OK)**: Datos actualizados del usuario.
-
-#### `DELETE /users/me` (Eliminar Mi Cuenta)
-*   **Headers**: `Authorization: Bearer <token>`
-*   **Respuesta (204 No Content)**.
-
----
-
-### 3. Endpoints de Administrador (Solo Administradores)
-
-#### `POST /users/admin` (Crear un nuevo Administrador)
-*   **Headers**: `Authorization: Bearer <token_de_administrador>`
-*   **Body (JSON)**: Datos del nuevo administrador.
-*   **Respuesta (201 Created)**: Datos del administrador creado (con `role: "Admin"`).
-
-#### `DELETE /users/{user_id}` (Eliminar a cualquier usuario)
-*   **Headers**: `Authorization: Bearer <token_de_administrador>`
-*   **Respuesta (204 No Content)**.
-
----
-
-## Verificación de Usuarios y Roles 
-
-Dado que se trata de una arquitectura de microservicios políglota (Go, Rust, Node.js), cualquier servicio del ecosistema puede verificar la autenticación del usuario de forma independiente (sin llamar constantemente al `AuthService` por red):
-
-```mermaid
-sequenceDiagram
-    Cliente->>Microservicio: Request HTTP + Header [Authorization: Bearer <JWT>]
-    Note over Microservicio: 1. Extrae el Token JWT de la cabecera
-    Note over Microservicio: 2. Verifica la firma usando la SECRET_KEY común
-    Note over Microservicio: 3. Valida expiración (exp)
-    Note over Microservicio: 4. Extrae ID (sub) y el Rol (role)
-    alt Rol es Admin y ruta es restringida
-        Microservicio->>Cliente: 200 OK / Procesa la petición
-    else Rol no es Admin y ruta es restringida
-        Microservicio->>Cliente: 403 Forbidden (Acceso denegado)
-    end
+```
+HTTP → routers → controllers → services → repositories → models (DB)
+                                   │
+                                   └── protocols (interfaces)
 ```
 
-### Reglas para la verificación en cualquier lenguaje:
-1.  **Extracción del Token**: Extraer el valor del string en la cabecera HTTP `Authorization`, eliminando el prefijo `"Bearer "`.
-2.  **Verificación de la Firma**: Validar el token usando la clave simétrica compartida (`SECRET_KEY`) y el algoritmo (`ALGORITHM`, ej: `HS256`).
-3.  **Chequeo de Expiración (`exp`)**: Validar que la fecha y hora actual sea menor que la marca de tiempo indicada en el campo `exp` del payload.
-4.  **Autorización Basada en Roles (`role`)**: Inspeccionar el claim `role` dentro del payload. Si la ruta requiere privilegios elevados (ej. gestionar espacios) y el rol del token no es `"Admin"`, rechazar inmediatamente la petición con un código HTTP `403 Forbidden`.
+| Capa | Carpeta | Responsabilidad |
+| ---- | ------- | --------------- |
+| **Routers** | `routers/` | Definen rutas y dependencias; resuelven el controlador a inyectar. |
+| **Controllers** | `controllers/` | Adaptan la petición/respuesta HTTP e invocan los servicios. |
+| **Services** | `services/` | Lógica de negocio: registro, login, hashing, emisión de JWT. |
+| **Repositories** | `repositories/` | Implementación de acceso a datos con SQLAlchemy. |
+| **Protocols** | `protocols/` | Interfaces que abstraen el repositorio del dominio. |
+| **Models** | `models/` | Entidades SQLAlchemy (tabla `users`). |
+| **Schemas** | `schemas/` | Validación y serialización con Pydantic. |
+| **Middlewares** | `middlewares/` | Autenticación JWT (`get_current_user_id`, `require_admin`) y manejo global de errores. |
+| **Errors** | `errors/` | Errores de negocio y de servidor tipados. |
+| **Database** | `database/` | Configuración del engine, sesión y `Base`. |
+
+`main.py` arranca la app FastAPI, crea las tablas (`Base.metadata.create_all`),
+registra el manejador global de excepciones e incluye los routers de `health`,
+`users` y `auth`.
+
+> Token = requiere token JWT válido · Admin = requiere rol `Admin`
 
 ---
 
-## Sembrado (Seeder) del Administrador Inicial
+## Tabla de endpoints
 
-Para crear el primer administrador del sistema e interactuar con los endpoints protegidos por primera vez, ejecuta el script de siembra provisto:
+> Rutas tal como las recibe el servicio (el gateway las expone bajo `/api/auth/`).
 
-1.  Asegúrate de tener la base de datos de autenticación activa.
-2.  Ejecuta el script interactivamente desde la carpeta del servicio:
-    ```bash
-    python3 seed.py
-    ```
-    *El script te solicitará los datos (Nombre, Email, Teléfono, Contraseña) y creará el registro automáticamente.*
+| Método | Ruta | Auth | Descripción |
+| ------ | ---- | ---- | ----------- |
+| `GET` | `/health` | — | Estado del servicio y de la base de datos |
+| `POST` | `/register` | — | Registra un usuario y devuelve un token |
+| `POST` | `/login` | — | Autentica con email y contraseña |
+| `GET` | `/users/me` | Token | Perfil del usuario autenticado |
+| `PUT` | `/users/me` | Token | Actualiza el propio perfil |
+| `DELETE` | `/users/me` | Token | Elimina la propia cuenta |
+| `GET` | `/users` | Admin | Lista todos los usuarios |
+| `GET` | `/users/admins` | Admin | Lista los administradores |
+| `POST` | `/users/admin` | Admin | Crea un nuevo administrador |
+| `DELETE` | `/users/{user_id}` | Admin | Elimina cualquier usuario por ID |
 
-3.  O ejecútalo de forma no interactiva (ideal para pipelines o Docker):
-    ```bash
-    python3 seed.py --name "Admin General" --email "admin@example.com" --phone "+57 300-1234567" --password "admin123"
-    ```
+---
+
+## Verificación de tokens en otros servicios
+
+Al ser una arquitectura políglota, cualquier microservicio (Go, Rust, Node.js)
+valida el JWT por su cuenta sin llamar al AuthService:
+
+1. Extrae el token de la cabecera `Authorization: Bearer <token>`.
+2. Verifica la firma con la `SECRET_KEY` y el `ALGORITHM` (`HS256`) compartidos.
+3. Comprueba la expiración (`exp`).
+4. Autoriza según el claim `role` (`User` / `Admin`); si la ruta requiere `Admin`
+   y el rol no lo es, responde `403 Forbidden`.
+
+---
+
+## Seeder del administrador inicial
+
+Para crear el primer administrador (necesario para acceder a las rutas Admin):
+
+```bash
+# Interactivo
+python3 seed.py
+
+# No interactivo (pipelines / Docker)
+python3 seed.py --name "Admin General" --email "admin@example.com" \
+  --phone "+57 300-1234567" --password "admin123"
+```

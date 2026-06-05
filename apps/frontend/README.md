@@ -1,36 +1,125 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Nexus Coworking — Frontend
 
-## Getting Started
+Aplicación web de la **Nexus Coworking Platform**. Es el panel desde el que usuarios
+y administradores gestionan espacios, reservas, facturación, reportes, horarios y
+cuentas. Consume la API de los microservicios exclusivamente a través del **API
+Gateway** (`http://localhost:8080`).
 
-First, run the development server:
+- **Framework:** Next.js 16 (App Router) + React 19
+- **Lenguaje:** TypeScript
+- **Estilos:** Tailwind CSS v4 + tokens de diseño NEXUS (fuente DM Sans)
+- **Validación:** Zod
+- **Gráficos:** Recharts
+- **Optimización:** React Compiler activado (`reactCompiler: true`)
+
+---
+
+## Inicio rápido
+
+### Requisitos
+
+- Node.js 20+
+- El backend de la plataforma en ejecución (gateway en `http://localhost:8080`).
+  Ver el `docker-compose.yml` en la raíz del repositorio.
+
+### Pasos
 
 ```bash
+npm install
+
+# Variables de entorno (apunta al API Gateway)
+# .env.local
+#   API_URL=http://localhost:8080
+#   NEXT_PUBLIC_API_URL=http://localhost:8080
+
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Script | Descripción |
+| ------ | ----------- |
+| `npm run dev` | Servidor de desarrollo con hot reload |
+| `npm run build` | Compilación de producción |
+| `npm run start` | Sirve la build de producción |
+| `npm run lint` | Linter (ESLint) |
 
-## Learn More
+### Variables de entorno
 
-To learn more about Next.js, take a look at the following resources:
+| Variable | Uso |
+| -------- | --- |
+| `API_URL` | URL del API Gateway usada en el **servidor** (Server Actions / `lib/api.ts`). |
+| `NEXT_PUBLIC_API_URL` | URL del gateway expuesta al **cliente** (p. ej. imágenes de espacios). |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Arquitectura interna
 
-## Deploy on Vercel
+La app usa el **App Router** de Next.js con un fuerte enfoque en **Server
+Components y Server Actions**: las páginas obtienen datos en el servidor y las
+mutaciones se ejecutan mediante Server Actions, que son las únicas que hablan con el
+gateway. El token JWT se guarda en una **cookie `token`** y se adjunta como
+`Authorization: Bearer` en cada petición.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+Browser ──▶ proxy (guard de auth) ──▶ Server Components / Server Actions
+                                              │  lib/api.ts (Bearer token)
+                                              ▼
+                                       API Gateway (:8080) ──▶ microservicios
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Estructura del proyecto
+
+```
+src/
+├── app/
+│   ├── actions/            Server Actions por dominio (auth, spaces, reservations,
+│   │                       billing, users, configuracion)
+│   ├── (app)/              Rutas protegidas (layout con sidebar):
+│   │   ├── dashboard/      KPIs y gráficos
+│   │   ├── spaces/         Catálogo y gestión de espacios
+│   │   ├── reservations/   Reservas (vista por espacio / tabla, calendario)
+│   │   ├── ordenes/        Cola de prioridad de reservas pendientes
+│   │   ├── billing/invoices/  Facturas y pago
+│   │   ├── caja/           Cobro / caja
+│   │   ├── configuracion/  Horarios de negocio
+│   │   ├── profile/        Perfil del usuario
+│   │   └── users/          Administración de usuarios/admins
+│   ├── login/  register/   Rutas públicas (autenticación)
+│   ├── layout.tsx          Layout raíz (fuente, tokens globales)
+│   └── globals.css         Estilos y tokens de diseño NEXUS
+├── components/             UI reutilizable (Sidebar, Modal, KpiCard, charts, etc.)
+├── lib/
+│   ├── api.ts              Wrapper de fetch al gateway (GET/POST/PUT/PATCH/DELETE + multipart)
+│   ├── validations/        Esquemas Zod (auth, ...)
+│   └── lookups, spaces, user   Helpers de dominio
+├── hooks/                  Hooks de cliente (p. ej. usePhoneInput)
+├── types/                  Tipos TypeScript por dominio
+└── proxy.ts               Guard de rutas: redirige a /login sin token y a /dashboard si ya hay sesión
+```
+
+| Pieza | Responsabilidad |
+| ----- | --------------- |
+| **`proxy.ts`** | Protege las rutas: sin cookie `token` redirige a `/login`; con sesión activa evita `/login` y `/register`. |
+| **`app/actions/`** | Server Actions que validan entrada (Zod), llaman al gateway vía `lib/api.ts` y revalidan datos. |
+| **`lib/api.ts`** | Centraliza el `fetch` al gateway, inyecta el `Bearer token` desde la cookie y maneja JSON y `multipart/form-data`. |
+| **`(app)/layout.tsx`** | Layout de la zona autenticada con la navegación lateral (`Sidebar`). |
+| **`components/`** | Componentes de presentación: tablas, modales, tarjetas KPI y gráficos (Recharts). |
+
+### Autenticación
+
+El login/registro obtienen un JWT del AuthService (vía gateway) y lo almacenan en la
+cookie `token`. A partir de ahí, `proxy.ts` controla el acceso a las rutas y
+`lib/api.ts` envía el token en cada llamada. Los roles (`User` / `Admin`) del payload
+del token determinan qué vistas y acciones se muestran.
+
+---
+
+## Backend y endpoints
+
+El frontend no define endpoints propios; consume los de los microservicios a través
+del gateway bajo los prefijos `/api/auth`, `/api/spaces`, `/api/reservations` y
+`/api/billing`. Para el detalle de cada endpoint, consulta el `README.md` de cada
+servicio en `services/` y el documento `API_ENDPOINTS.md` en la raíz del repositorio.
